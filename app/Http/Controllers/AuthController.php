@@ -3,16 +3,20 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller; // Asegura la herencia correcta
+use App\Http\Controllers\Controller;
 
 class AuthController extends Controller
 {
     public function login(Request $request)
     {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
         $credentials = $request->only('email', 'password');
 
         if (!$token = auth('api')->attempt($credentials)) {
-            // Tarea 4: El error 401 debe ser claro
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
@@ -20,20 +24,28 @@ class AuthController extends Controller
     }
 
     public function me()
-    {
-        return response()->json(auth('api')->user());
+{
+    try {
+        // Esto forzará a JWT a validar el token contra la blacklist
+        if (! $user = auth('api')->user()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+        return response()->json($user);
+    } catch (\Tymon\JWTAuth\Exceptions\TokenBlacklistedException $e) {
+        return response()->json(['error' => 'Token invalidado'], 401);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'No autorizado'], 401);
     }
+}
 
     public function logout()
-    {
-        auth('api')->logout();
-        
-        return response()->json(['message' => 'Logged out']);
-    }
-
+{
+    auth('api')->logout(true); 
+    return response()->json(['message' => 'Logged out']);
+}
     public function refresh()
     {
-       return $this->respondWithToken(auth('api')->refresh());
+        return $this->respondWithToken(auth('api')->refresh());
     }
 
     protected function respondWithToken($token)
