@@ -56,8 +56,8 @@ jobs:
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: ":memory:"
-          APP_KEY: ${{ secrets.APP_KEY }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          APP_KEY: "base64:uP0wX6S7g3MdfK9vXzPqW2bN6tYmR4vXzPqW2bN6tYm="
+          JWT_SECRET: "3wX7g3MdfK9vXzPqW2bN6tYmR4vXzPqW2bN6tYmR4vXzPqW2bN6tYmR4vXzPqW2b"
         run: php artisan test --stop-on-failure
 
   security:
