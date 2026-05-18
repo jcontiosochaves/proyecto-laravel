@@ -1,0 +1,85 @@
+name: Pipeline de Integración Continua (CI)
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+ lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configurar PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+
+    - name: Instalar Dependencias
+      run: composer install --prefer-dist --no-interaction --ignore-platform-reqs
+
+    - name: Ejecutar Linter (Pint / PHP -l)
+      run: |
+        if [ -f "./vendor/bin/pint" ]; then
+          ./vendor/bin/pint --test
+        else
+          find app -type f -name "*.php" -print0 | xargs -0 -n1 php -l
+        fi
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configurar PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+        extensions: pdo, pdo_sqlite, mbstring
+
+    - name: Instalar Dependencias
+      run: composer install --prefer-dist --no-interaction --ignore-platform-reqs
+
+    - name: Preparar Entorno de Pruebas
+      run: |
+        cp .env.example .env
+        php artisan key:generate
+
+    - name: Ejecutar PHPUnit (Tests)
+      env:
+        DB_CONNECTION: sqlite
+        DB_DATABASE: ":memory:"
+        APP_KEY: ${{ secrets.APP_KEY }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      run: php artisan test --stop-on-failure
+  security:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configurar PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+
+    - name: Auditoría de Seguridad de Dependencias
+      run: composer audit --format=summary
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Construir Imagen Docker
+      run: docker build -t proyecto-laravel:latest .
+
+    - name: Verificar que el Contenedor Arranca
+      run: |
+        docker run -d -p 8000:80 --name mi_app_laravel proyecto-laravel:latest
+        sleep 5
+        docker ps | grep mi_app_laravel
