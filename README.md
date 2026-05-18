@@ -61,3 +61,6 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 # proyecto-laravel
 Proyecto laravel para PPS
 >>>>>>> 8c104fd3484e405eb69ec7f144e09abd8353df5d
+
+## Estado del proyecto
+- Pipeline CI configurado y activo.
