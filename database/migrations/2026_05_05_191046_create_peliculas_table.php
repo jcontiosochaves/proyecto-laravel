@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-    Schema::create('peliculas', function (Blueprint $table) {
-        $table->id();
-        $table->string('titulo');
-        $table->integer('año');
-        $table->foreignId('director_id')->constrained('directors')->onDelete('cascade');
-        $table->timestamps();
-    });
-}
+        Schema::create('peliculas', function (Blueprint $table) {
+            $table->id();
+            $table->string('titulo');
+            $table->integer('año');
+            $table->foreignId('director_id')->constrained('directors')->onDelete('cascade');
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.

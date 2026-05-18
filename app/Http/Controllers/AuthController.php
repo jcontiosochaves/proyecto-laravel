@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
+use Tymon\JWTAuth\Exceptions\TokenBlacklistedException;
 
 class AuthController extends Controller
 {
@@ -16,7 +16,7 @@ class AuthController extends Controller
 
         $credentials = $request->only('email', 'password');
 
-        if (!$token = auth('api')->attempt($credentials)) {
+        if (! $token = auth('api')->attempt($credentials)) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
@@ -24,25 +24,28 @@ class AuthController extends Controller
     }
 
     public function me()
-{
-    try {
-        // Esto forzará a JWT a validar el token contra la blacklist
-        if (! $user = auth('api')->user()) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+    {
+        try {
+            // Esto forzará a JWT a validar el token contra la blacklist
+            if (! $user = auth('api')->user()) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+
+            return response()->json($user);
+        } catch (TokenBlacklistedException $e) {
+            return response()->json(['error' => 'Token invalidado'], 401);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'No autorizado'], 401);
         }
-        return response()->json($user);
-    } catch (\Tymon\JWTAuth\Exceptions\TokenBlacklistedException $e) {
-        return response()->json(['error' => 'Token invalidado'], 401);
-    } catch (\Exception $e) {
-        return response()->json(['error' => 'No autorizado'], 401);
     }
-}
 
     public function logout()
-{
-    auth('api')->logout(true); 
-    return response()->json(['message' => 'Logged out']);
-}
+    {
+        auth('api')->logout(true);
+
+        return response()->json(['message' => 'Logged out']);
+    }
+
     public function refresh()
     {
         return $this->respondWithToken(auth('api')->refresh());
@@ -53,7 +56,7 @@ class AuthController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => auth('api')->factory()->getTTL() * 60
+            'expires_in' => auth('api')->factory()->getTTL() * 60,
         ]);
     }
 }

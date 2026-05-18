@@ -15,11 +15,11 @@ class DirectorFactory extends Factory
      *
      * @return array<string, mixed>
      */
-   public function definition(): array
-{
-    return [
-        'nombre' => $this->faker->name(),
-        'biografia' => $this->faker->paragraph(),
-    ];
-}
+    public function definition(): array
+    {
+        return [
+            'nombre' => $this->faker->name(),
+            'biografia' => $this->faker->paragraph(),
+        ];
+    }
 }

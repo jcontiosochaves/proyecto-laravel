@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Director;
+use Illuminate\Http\Request;
 
 class DirectorController extends Controller
 {
@@ -12,9 +12,9 @@ class DirectorController extends Controller
      */
     public function index()
     {
-        
+
         return response()->json(Director::all(), 200);
-    
+
     }
 
     /**
@@ -24,10 +24,11 @@ class DirectorController extends Controller
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
-            'biografia' => 'nullable|string'
+            'biografia' => 'nullable|string',
         ]);
 
         $director = Director::create($validated);
+
         return response()->json($director, 201);
     }
 
@@ -41,7 +42,7 @@ class DirectorController extends Controller
     {
         $director = Director::find($id);
 
-        if (!$director) {
+        if (! $director) {
             return response()->json(['message' => 'Director no encontrado'], 404);
         }
 
@@ -55,29 +56,30 @@ class DirectorController extends Controller
     {
         $director = Director::find($id);
 
-        if (!$director) {
+        if (! $director) {
             return response()->json(['message' => 'Director no encontrado'], 404);
         }
 
         $validated = $request->validate([
             'nombre' => 'sometimes|required|string|max:255',
-            'biografia' => 'nullable|string'
+            'biografia' => 'nullable|string',
         ]);
 
         $director->update($validated);
+
         return response()->json($director, 200);
     }
-
 
     public function destroy(string $id)
     {
         $director = Director::find($id);
 
-        if (!$director) {
+        if (! $director) {
             return response()->json(['message' => 'Director no encontrado'], 404);
         }
 
         $director->delete();
+
         return response()->json(['message' => 'Director eliminado correctamente'], 200);
     }
 }

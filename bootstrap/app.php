@@ -14,7 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         // AÑADE ESTO PARA QUITAR EL ERROR 419 EN LA API
         $middleware->validateCsrfTokens(except: [
-            'api/*', 
+            'api/*',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
