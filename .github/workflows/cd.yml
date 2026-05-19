@@ -54,12 +54,13 @@ jobs:
             -e APP_KEY="$APP_KEY" \
             -e JWT_SECRET="$JWT_SECRET" \
             -e DB_CONNECTION=sqlite \
-            -e DB_DATABASE=":memory:" \
+            -e DB_DATABASE=/tmp/database.sqlite \
             --name app_smoke_test \
             ghcr.io/$REPO_NAME:latest
           
           sleep 5
           
+          docker exec app_smoke_test touch /tmp/database.sqlite
           docker exec app_smoke_test php artisan migrate --force
           docker exec app_smoke_test php artisan db:seed --force || true
           
@@ -67,7 +68,7 @@ jobs:
             -X POST \
             -H "Content-Type: application/json" \
             -H "Accept: application/json" \
-            -d '{"email":"user@example.com", "password":"password"}' \
+            -d '{"email":"jose@example.com", "password":"password"}' \
             http://localhost:8000/api/auth/login || echo "000")
           
           docker stop app_smoke_test && docker rm app_smoke_test
@@ -78,4 +79,3 @@ jobs:
             echo "Error: El endpoint de login respondió con un código inesperado: $RESPONSE"
             exit 1
           fi
-        
