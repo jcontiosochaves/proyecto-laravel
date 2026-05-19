@@ -10,7 +10,7 @@ permissions:
   packages: write
 
 jobs:
-  deploy:
+  smoke-test:
     runs-on: ubuntu-latest
     steps:
       - name: Clonar repositorio
@@ -43,7 +43,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Smoke Test (Verificar Disponibilidad del Endpoint de Login)
+      - name: Smoke Test (Verificar Disponibilidad)
         env:
           APP_KEY: "base64:uP0wX6S7g3MdfK9vXzPqW2bN6tYmR4vXzPqW2bN6tYm="
           JWT_SECRET: "3wX7g3MdfK9vXzPqW2bN6tYmR4vXzPqW2bN6tYmR4vXzPqW2bN6tYmR4vXzPqW2b"
@@ -74,8 +74,39 @@ jobs:
           docker stop app_smoke_test && docker rm app_smoke_test
           
           if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 401 ] || [ "$RESPONSE" -eq 422 ]; then
-            echo "Smoke test superado exitosamente. Código HTTP válido de la app: $RESPONSE"
+            echo "Smoke test superado exitosamente. Código HTTP válido: $RESPONSE"
           else
-            echo "Error: El contenedor arrojó un código inesperado o crítico: $RESPONSE"
+            echo "Error: El contenedor arrojó un código crítico: $RESPONSE"
             exit 1
           fi
+
+  deploy-staging:
+    needs: smoke-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio para obtener el docker-compose
+        uses: actions/checkout@v4
+
+      - name: Copiar docker-compose al servidor remoto
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.yml"
+          target: "~/app-staging"
+
+      - name: Ejecutar despliegue remoto vía SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: GITHUB_TOKEN
+          script: |
+            cd ~/app-staging
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker exec laravel_production_app touch /var/www/html/storage/database.sqlite
+            docker exec laravel_production_app php artisan migrate --force
