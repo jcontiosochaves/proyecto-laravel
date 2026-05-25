@@ -42,8 +42,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-      - name: Test SSH connectivity
-        run: nc -vz 100.118.114.47 22
+          
       - name: Smoke Test (Verificar Disponibilidad)
         env:
           APP_KEY: "base64:uP0wX6S7g3MdfK9vXzPqW2bN6tYmR4vXzPqW2bN6tYm="
