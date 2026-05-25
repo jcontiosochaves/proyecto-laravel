@@ -1,63 +1,167 @@
-<<<<<<< HEAD
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+## API Laravel: CRUD de Películas y Directores con JWT + CI/CD
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API REST desarrollada en Laravel para la gestión de un programa de películas y directores. Incluye autenticación JWT y un pipeline de CI/CD automatizado mediante GitHub Actions.
 
-## About Laravel
+## Entorno de Desarrollo (Dev Containers)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Este proyecto utiliza Dev Containers para garantizar un entorno de desarrollo reproducible, aislado y homogéneo entre todos los desarrolladores.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Requisitos
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Docker
+- Visual Studio Code
+- Extensión Dev Containers
 
-## Learning Laravel
+### Inicialización del entorno
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+El entorno se inicializa directamente desde Visual Studio Code mediante la configuración del repositorio. Para ello, basta con abrir el proyecto y seleccionar la opción Reopen in Container cuando aparezca el aviso.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Una vez iniciado el contenedor, el sistema prepara automáticamente el entorno de trabajo.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### Proceso automático del contenedor
 
-## Agentic Development
+Durante la creación del entorno se ejecutan de forma desatendida las siguientes tareas:
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+- Instalación de dependencias del proyecto mediante Composer
+- Configuración inicial del entorno Laravel
+- Generación de la clave de la aplicación con php artisan key:generate
 
-```bash
-composer require laravel/boost --dev
 
-php artisan boost:install
-```
+## Autenticación JWT (Fase 1)
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+El sistema implementa un modelo de autenticación stateless basado en el estándar de JWT, utilizando la librería `tymon/jwt-auth`.
 
-## Contributing
+### Login de usuario
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+El endpoint `/api/auth/login` valida las credenciales del usuario y si son correctas, genera un token encriptado. Este token incluye el tipo de autenticación Bearer y un tiempo de expiración.
 
-## Code of Conduct
+### Cierre de sesión
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+El endpoint `/api/auth/logout` invalida el token actual utilizando un sistema de blacklist basado en el identificador único `jti`, evitando su reutilización.
 
-## Security Vulnerabilities
+### Renovación de token
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+El endpoint `/api/auth/refresh` permite generar un nuevo token antes de que el anterior expire, manteniendo la sesión activa de forma controlada.
 
-## License
+### Información del usuario
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-=======
-# proyecto-laravel
-Proyecto laravel para PPS
->>>>>>> 8c104fd3484e405eb69ec7f144e09abd8353df5d
+El endpoint `/api/auth/me` devuelve los datos del usuario autenticado, excluyendo información sensible como la contraseña.
+
+### Cabeceras HTTP
+
+Para acceder a rutas protegidas es obligatorio incluir el token en la cabecera HTTP:
+  
+```http  
+Authorization: Bearer <token>  
+Accept: application/json  
+```  
+  
+## Acceso a recursos protegidos  
+  
+Todas las rutas del sistema requieren autenticación mediante JWT.  
+Si no se proporciona un token válido, el sistema responde con un error `401 Unauthorized`, denegando el acceso a los recursos protegidos.  
+  
+  
+# API REST – CRUD del sistema  
+  
+La aplicación funciona basándose en un conjunto de endpoints REST que permiten gestionar directores y películas de forma segura.  
+  
+  
+# Gestión de Directores  
+  
+El sistema permite realizar operaciones completas de creación, consulta, actualización y eliminación de directores.  
+  
+La creación de un director valida los datos enviados por el cliente y rechaza la solicitud si la información no es válida.  
+  
+La actualización requiere que el director exista previamente en el sistema, devolviendo un error `404 Not Found` en caso contrario.  
+  
+La eliminación de directores está protegida por reglas, impidiendo borrar registros que tengan películas asociadas.  
+  
+  
+# Gestión de Películas  
+  
+Las películas se gestionan mediante un conjunto de operaciones CRUD completas.  
+  
+Cada película debe estar obligatoriamente asociada a un director existente.  
+  
+El sistema garantiza esta relación para mantener la consistencia de los datos.  
+  
+Las operaciones de actualización y eliminación verifican la existencia del recurso antes de aplicar cualquier cambio.  
+  
+  
+# CI/CD con GitHub Actions  
+  
+El proyecto incorpora un flujo de integración y despliegue continuo automatizado mediante GitHub Actions.  
+  
+El pipeline se ejecuta automáticamente en cada `push` o `pull_request` sobre la rama main del repositorio.  
+##  Funcionamiento del pipeline  
+  
+El proceso comienza con la creación de un entorno aislado basado en Ubuntu, donde se instalan PHP, Composer y las dependencias del proyecto.  
+  
+A continuación, se ejecutan análisis estáticos de código para garantizar el cumplimiento de estándares.  
+  
+Después se realizan las migraciones de base de datos en un entorno temporal en memoria, evitando cualquier impacto en entornos reales.  
+  
+Finalmente, se ejecuta las pruebas automatizadas con PHPUnit, deteniendo el flujo si se detecta cualquier fallo.  
+  
+#  Testing y calidad de código  
+  
+El proyecto incluye un sistema de pruebas automatizadas.
+  
+## Ejecución de tests  
+  
+```bash  
+php artisan test  
+```  
+  
+## Formateo de código  
+  
+```bash  
+./vendor/bin/pint  
+```  
+  
+## Organización de tests  
+  
+Los tests están organizados por módulos funcionales:  
+  
+- Autenticación  
+- Directores  
+- Películas  
+- Seguridad  
+  
+Se ejecutan utilizando una base de datos en memoria SQLite, lo que garantiza independencia entre pruebas.  
+  
+  
+# Seguridad en producción (Hardening)  
+  
+El sistema incorpora varias medidas de seguridad pensadas para entornos reales de producción.  
+  
+## Medidas implementadas  
+  
+### Rate limiting  
+  
+Se aplica rate limiting en los endpoints críticos, especialmente en el login, con el objetivo de prevenir ataques de fuerza bruta.  
+  
+### HTTPS obligatorio  
+  
+El sistema está configurado para operar exclusivamente bajo HTTPS, asegurando la protección de los tokens JWT durante la transmisión.  
+  
+### Desactivación del modo debug  
+  
+En producción se desactiva el modo debug mediante:  
+  
+```env  
+APP_DEBUG=false  
+```  
+  
+Esto evita la exposición de información sensible como trazas de error o consultas SQL internas.  
+  
+# Tecnologías utilizadas  
+  
+El proyecto está desarrollado utilizando Laravel como framework principal y PHP como lenguaje base.  
+  
+La autenticación se gestiona mediante JWT con la librería `tymon/jwt-auth`.  
+  
+Las pruebas automatizadas se realizan con PHPUnit y el formateo de código con Laravel Pint bajo estándar PSR-12.  
+  
+El entorno de desarrollo está basado en Docker mediante Dev Containers, y el flujo CI/CD se gestiona con GitHub Actions.
