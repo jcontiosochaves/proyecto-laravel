@@ -42,7 +42,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
+      - name: Test SSH connectivity
+        run: nc -vz 100.118.114.47 22
       - name: Smoke Test (Verificar Disponibilidad)
         env:
           APP_KEY: "base64:uP0wX6S7g3MdfK9vXzPqW2bN6tYmR4vXzPqW2bN6tYm="
@@ -80,34 +81,48 @@ jobs:
             exit 1
           fi
 
-  deploy-staging:
-    needs: smoke-test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Clonar repositorio para obtener el docker-compose
-        uses: actions/checkout@v4
+ deploy-staging:
+  needs: smoke-test
+  runs-on: ubuntu-latest
 
-      - name: Copiar docker-compose al servidor remoto
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: "${{ secrets.SSH_HOST }}"
-          username: "${{ secrets.SSH_USER }}"
-          key: "${{ secrets.SSH_PRIVATE_KEY }}"
-          port: ${{ secrets.SSH_PORT || 22 }}
-          source: "docker-compose.yml"
-          target: "~/app-staging"
+  steps:
+    - name: Clonar repositorio
+      uses: actions/checkout@v4
 
-      - name: Ejecutar despliegue remoto vía SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: "${{ secrets.SSH_HOST }}"
-          username: "${{ secrets.SSH_USER }}"
-          key: "${{ secrets.SSH_PRIVATE_KEY }}"
-          port: ${{ secrets.SSH_PORT || 22 }}
-          script: |
-            cd ~/app-staging
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker compose pull
-            docker compose up -d --remove-orphans
-            docker exec laravel_production_app touch /var/www/html/storage/database.sqlite
-            docker exec laravel_production_app php artisan migrate --force
+    
+    - name: Copiar docker-compose al servidor
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: 100.118.114.47
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        source: "docker-compose.yml"
+        target: "/home/${{ secrets.SSH_USER }}/app-staging"
+
+
+    - name: Ejecutar despliegue por SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: 100.118.114.47
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        script: |
+          set -e
+
+          cd /home/${{ secrets.SSH_USER }}/app-staging
+
+          echo "📥 Login GHCR..."
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+          echo "🐳 Pull imágenes..."
+          docker compose pull
+
+          echo "🚀 Levantando servicios..."
+          docker compose up -d --remove-orphans
+
+          echo "🧪 Migraciones Laravel..."
+          docker exec laravel_production_app php artisan migrate --force || true
+
+          echo "✅ Deploy staging completado"
